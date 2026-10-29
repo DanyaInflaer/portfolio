@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Даня, начинающий программист</title>
+  <meta name="description" content="Личный сайт Дани: начинающий программист, учусь делать сайты и слежу за киберсферой.">
+  <meta name="theme-color" content="#0F1320">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%236BA6F5'/%3E%3Ctext x='16' y='23' font-size='20' font-family='sans-serif' font-weight='700' text-anchor='middle' fill='%230F1320'%3E%D0%94%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=JetBrains+Mono:wght@500&family=Unbounded:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip" href="#main">Перейти к содержимому</a>
+
+  <header class="top">
+    <div class="wrap top-row">
+      <span class="brand">Даня</span>
+      <nav aria-label="Разделы сайта">
+        <a href="#about">Обо мне</a>
+        <a href="#learning">Что изучаю</a>
+        <a href="#projects">Проекты</a>
+        <a href="#contact">Контакты</a>
+      </nav>
+      <button class="toggle" id="inspector-toggle" type="button" aria-pressed="true">Инспектор включён</button>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero wrap" aria-labelledby="name">
+      <h1 id="name" data-inspect>Даня</h1>
+      <p class="lead" data-inspect>Начинающий программист. Учусь делать сайты и слежу за киберсферой.</p>
+      <p class="hint" id="hint" hidden>Наведи курсор на любой блок: покажу его размеры и отступы, как в инструментах разработчика.</p>
+      <div class="actions">
+        <a class="btn btn-primary" data-inspect href="mailto:teamgrowth37@gmail.com">Написать мне</a>
+        <a class="btn btn-ghost" data-inspect href="https://github.com/DanyaInflaer" target="_blank" rel="noopener">Мой GitHub</a>
+      </div>
+    </section>
+
+    <section class="section wrap" id="about" aria-labelledby="about-title" data-inspect>
+      <h2 id="about-title">Обо мне</h2>
+      <div class="prose">
+        <p>Меня зовут Даня, я начинающий программист. Мне по душе всё, что связано с сайтами и киберсферой: я слежу за новостями в интернете, разбираюсь, как всё устроено, и могу заниматься этим днём и ночью.</p>
+        <p>Сейчас я набираюсь навыков, которые пригодятся мне дальше. Этот сайт один из них: я сделал его для себя, чтобы показывать, как я расту.</p>
+        <p>Моя цель: делать работы и идеи, которые помогают людям, и со временем зарабатывать этим.</p>
+      </div>
+    </section>
+
+    <section class="section wrap" id="learning" aria-labelledby="learning-title" data-inspect>
+      <h2 id="learning-title">Что изучаю</h2>
+      <dl class="skills">
+        <div data-inspect><dt>HTML</dt><dd>Структура страниц: заголовки, текст, ссылки, формы.</dd></div>
+        <div data-inspect><dt>CSS</dt><dd>Оформление и адаптивность, чтобы сайт выглядел хорошо на телефоне и на компьютере.</dd></div>
+        <div data-inspect><dt>JavaScript</dt><dd>Поведение страниц: кнопки, переключатели, реакция на действия человека.</dd></div>
+        <div data-inspect><dt>Git и GitHub</dt><dd>Хранение кода, история изменений и публикация сайтов.</dd></div>
+        <div data-inspect><dt>Киберсфера</dt><dd>Слежу за новостями про безопасность в интернете и новые технологии.</dd></div>
+      </dl>
+    </section>
+
+    <section class="section wrap" id="projects" aria-labelledby="projects-title" data-inspect>
+      <h2 id="projects-title">Проекты</h2>
+      <div class="projects">
+        <article class="project" data-inspect>
+          <h3>Этот сайт</h3>
+          <p>Личное портфолио с тёмной темой и режимом «инспектор»: наведи курсор на блок и увидишь его размеры, как в DevTools. Код открыт.</p>
+          <a href="https://github.com/DanyaInflaer/portfolio" target="_blank" rel="noopener">Открыть код на GitHub</a>
+        </article>
+        <p class="empty">Новые проекты появятся здесь. Следить за ними можно на <a href="https://github.com/DanyaInflaer" target="_blank" rel="noopener">GitHub</a>.</p>
+      </div>
+    </section>
+
+    <section class="section wrap" id="contact" aria-labelledby="contact-title" data-inspect>
+      <h2 id="contact-title">Контакты</h2>
+      <div class="prose">
+        <p>Пишите, если хотите обсудить сайт, идею или просто познакомиться.</p>
+        <p class="contact-links" data-inspect>
+          <a class="mail" href="mailto:teamgrowth37@gmail.com">teamgrowth37@gmail.com</a>
+          <a href="https://github.com/DanyaInflaer" target="_blank" rel="noopener">github.com/DanyaInflaer</a>
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap">Даня, 2026</div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
