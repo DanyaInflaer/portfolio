@@ -1,146 +1,363 @@
 (function () {
-  var toggle = document.getElementById('inspector-toggle');
-  var hint = document.getElementById('hint');
-  var canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  'use strict';
 
-  // На телефонах и планшетах наведения нет, поэтому инспектор там отключён.
-  if (!canHover) {
-    if (toggle) toggle.hidden = true;
-    return;
+  var html = document.documentElement;
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- Приветствие по времени суток ---------- */
+
+  function greetingFor(date) {
+    var h = date.getHours();
+    if (h >= 5 && h < 12) return 'Доброе утро';
+    if (h >= 12 && h < 18) return 'Добрый день';
+    if (h >= 18 && h < 23) return 'Добрый вечер';
+    return 'Доброй ночи';
   }
 
-  var enabled = true;
-  try {
-    if (localStorage.getItem('inspector') === 'off') enabled = false;
-  } catch (e) {}
+  var heading = document.getElementById('greeting');
+  var text = greetingFor(new Date());
+  var chars = [];
 
-  if (hint) hint.hidden = false;
+  heading.setAttribute('aria-label', text);
+  heading.textContent = '';
+  text.split(' ').forEach(function (word, index, all) {
+    var wrap = document.createElement('span');
+    wrap.className = 'word';
+    wrap.setAttribute('aria-hidden', 'true');
+    word.split('').forEach(function (letter) {
+      var node = document.createElement('span');
+      node.className = 'ch lock';
+      node.textContent = letter;
+      wrap.appendChild(node);
+      chars.push({ el: node, final: letter, done: false, width: 0 });
+    });
+    heading.appendChild(wrap);
+    if (index < all.length - 1) heading.appendChild(document.createTextNode(' '));
+  });
 
-  var root = document.createElement('div');
-  root.className = 'insp';
-  root.hidden = true;
-  root.setAttribute('aria-hidden', 'true');
-  root.innerHTML =
-    '<span class="insp-layer insp-margin"></span>' +
-    '<span class="insp-layer insp-padding"></span>' +
-    '<span class="insp-layer insp-content"></span>' +
-    '<span class="insp-label"></span>';
-  document.body.appendChild(root);
-
-  var margin = root.querySelector('.insp-margin');
-  var padding = root.querySelector('.insp-padding');
-  var content = root.querySelector('.insp-content');
-  var label = root.querySelector('.insp-label');
-  var current = null;
-  var introTimer = null;
-
-  function px(value) {
-    return parseFloat(value) || 0;
+  function showRest() {
+    html.classList.add('hero-in');
   }
 
-  function place(node, left, top, width, height) {
-    node.style.left = left + 'px';
-    node.style.top = top + 'px';
-    node.style.width = Math.max(width, 0) + 'px';
-    node.style.height = Math.max(height, 0) + 'px';
-  }
+  function scrambleGreeting() {
+    var pool = '01#%&@$<>/{}[]=+*?';
+    var plan;
+    var started;
+    var lastSwap = 0;
 
-  function draw(el) {
-    var r = el.getBoundingClientRect();
-    var cs = getComputedStyle(el);
-    var m = { t: px(cs.marginTop), r: px(cs.marginRight), b: px(cs.marginBottom), l: px(cs.marginLeft) };
-    var p = { t: px(cs.paddingTop), r: px(cs.paddingRight), b: px(cs.paddingBottom), l: px(cs.paddingLeft) };
+    // Фиксируем ширину букв, чтобы строка не прыгала, пока символы меняются.
+    chars.forEach(function (c) { c.width = c.el.getBoundingClientRect().width; });
+    chars.forEach(function (c) {
+      c.el.style.width = c.width + 'px';
+      c.el.classList.remove('lock');
+      c.el.textContent = pool.charAt(Math.floor(Math.random() * pool.length));
+    });
+    heading.classList.add('ready');
 
-    place(margin, r.left - m.l, r.top - m.t, r.width + m.l + m.r, r.height + m.t + m.b);
-    place(padding, r.left, r.top, r.width, r.height);
-    place(content, r.left + p.l, r.top + p.t, r.width - p.l - p.r, r.height - p.t - p.b);
+    plan = chars.map(function (c, i) { return 260 + i * 70 + Math.random() * 180; });
+    started = performance.now();
+    setTimeout(showRest, 900);
 
-    var cls = el.classList.length ? '.' + el.classList[0] : (el.id ? '#' + el.id : '');
-    label.innerHTML =
-      '<b>' + el.tagName.toLowerCase() + cls + '</b> ' +
-      Math.round(r.width) + ' × ' + Math.round(r.height);
+    function tick(now) {
+      var elapsed = now - started;
+      var swap = now - lastSwap > 45;
+      if (swap) lastSwap = now;
 
-    var labelTop = r.top - m.t - 30;
-    if (labelTop < 4) labelTop = r.bottom + m.b + 6;
-    label.style.left = Math.max(r.left, 4) + 'px';
-    label.style.top = labelTop + 'px';
+      chars.forEach(function (c, i) {
+        if (c.done) return;
+        if (elapsed >= plan[i]) {
+          c.done = true;
+          c.el.textContent = c.final;
+          c.el.classList.add('lock');
+        } else if (swap) {
+          c.el.textContent = pool.charAt(Math.floor(Math.random() * pool.length));
+        }
+      });
 
-    root.hidden = false;
-    current = el;
-  }
-
-  function hide() {
-    root.hidden = true;
-    current = null;
-  }
-
-  function cancelIntro() {
-    if (introTimer) {
-      clearTimeout(introTimer);
-      introTimer = null;
+      if (chars.every(function (c) { return c.done; })) {
+        chars.forEach(function (c) { c.el.style.width = ''; });
+        return;
+      }
+      requestAnimationFrame(tick);
     }
+    requestAnimationFrame(tick);
   }
 
-  function inspect(event) {
-    if (!enabled) return;
-    var target = event.target.closest ? event.target.closest('[data-inspect]') : null;
-    if (target) draw(target);
-    else hide();
-  }
-
-  // Пока идёт показ при загрузке, браузер может сам прислать событие наведения.
-  // Его игнорируем: показ прерывает только настоящее движение мыши.
-  document.addEventListener('mouseover', function (event) {
-    if (introTimer) return;
-    inspect(event);
-  });
-
-  document.addEventListener('mousemove', function (event) {
-    if (!introTimer) return;
-    if (!event.movementX && !event.movementY) return;
-    cancelIntro();
-    inspect(event);
-  });
-
-  document.addEventListener('mouseleave', hide);
-
-  window.addEventListener('scroll', function () {
-    if (current && enabled) draw(current);
-  }, { passive: true });
-
-  window.addEventListener('resize', function () {
-    if (current && enabled) draw(current);
-  });
-
-  function setEnabled(value) {
-    enabled = value;
-    toggle.setAttribute('aria-pressed', String(value));
-    toggle.textContent = value ? 'Инспектор включён' : 'Инспектор выключен';
-    try {
-      localStorage.setItem('inspector', value ? 'on' : 'off');
-    } catch (e) {}
-    if (!value) {
-      cancelIntro();
-      hide();
+  function startGreeting() {
+    if (reduce) {
+      heading.classList.add('ready');
+      showRest();
+      html.classList.add('chart-in');
+      return;
     }
+    var fontWait = (document.fonts && document.fonts.load)
+      ? document.fonts.load('700 100px Geologica', text).catch(function () {})
+      : Promise.resolve();
+    var timeout = new Promise(function (resolve) { setTimeout(resolve, 900); });
+    Promise.race([fontWait, timeout]).then(function () {
+      scrambleGreeting();
+      setTimeout(function () { html.classList.add('chart-in'); }, 500);
+    });
   }
 
-  toggle.addEventListener('click', function () {
-    setEnabled(!enabled);
-  });
+  /* ---------- Линия роста ---------- */
 
-  setEnabled(enabled);
+  (function buildChart() {
+    var path = document.getElementById('chart-path');
+    var dot = document.getElementById('chart-dot');
+    var seed = 7;
+    function rand() {
+      seed = (seed * 1664525 + 1013904223) >>> 0;
+      return seed / 4294967296;
+    }
 
-  // Один показ при загрузке: подсвечиваем имя, потом управление переходит к курсору.
-  if (enabled && !reduceMotion) {
-    var title = document.getElementById('name');
-    introTimer = setTimeout(function () {
-      draw(title);
-      introTimer = setTimeout(function () {
-        introTimer = null;
-        hide();
-      }, 2200);
-    }, 500);
-  }
+    var count = 48;
+    var y = 165;
+    var d = '';
+    var lastX = 0;
+    var lastY = y;
+    for (var i = 0; i < count; i++) {
+      var x = (i / (count - 1)) * 950;
+      y += (rand() - 0.5) * 28 - 2.2;
+      y = Math.max(24, Math.min(188, y));
+      d += (i === 0 ? 'M' : ' L') + x.toFixed(1) + ' ' + y.toFixed(1);
+      lastX = x;
+      lastY = y;
+    }
+    path.setAttribute('d', d);
+    dot.style.left = (lastX / 1000) * 100 + '%';
+    dot.style.top = (lastY / 200) * 100 + '%';
+  })();
+
+  /* ---------- Сеть точек на главном экране ---------- */
+
+  (function network() {
+    var hero = document.getElementById('top');
+    var canvas = document.getElementById('net');
+    var ctx = canvas.getContext('2d');
+    var width = 0;
+    var height = 0;
+    var nodes = [];
+    var pointer = { x: -999, y: -999 };
+    var visible = true;
+    var frameId = 0;
+    var LINK = 140;
+    var REACH = 190;
+
+    function resize() {
+      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      var rect = hero.getBoundingClientRect();
+      width = rect.width;
+      height = rect.height;
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      var total = Math.max(22, Math.min(90, Math.round((width * height) / 16000)));
+      nodes = [];
+      for (var i = 0; i < total; i++) {
+        nodes.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          vx: (Math.random() - 0.5) * 0.3,
+          vy: (Math.random() - 0.5) * 0.3,
+          r: 1 + Math.random() * 1.4
+        });
+      }
+      draw(false);
+    }
+
+    function draw(move) {
+      var i, j, a, b, dx, dy, dist, alpha;
+      ctx.clearRect(0, 0, width, height);
+
+      for (i = 0; i < nodes.length; i++) {
+        a = nodes[i];
+        if (move) {
+          dx = pointer.x - a.x;
+          dy = pointer.y - a.y;
+          dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < REACH && dist > 1) {
+            a.vx += (dx / dist) * 0.012;
+            a.vy += (dy / dist) * 0.012;
+          }
+          a.vx *= 0.995;
+          a.vy *= 0.995;
+          a.x += a.vx;
+          a.y += a.vy;
+          if (a.x < -10) a.x = width + 10;
+          if (a.x > width + 10) a.x = -10;
+          if (a.y < -10) a.y = height + 10;
+          if (a.y > height + 10) a.y = -10;
+        }
+      }
+
+      ctx.lineWidth = 1;
+      for (i = 0; i < nodes.length; i++) {
+        a = nodes[i];
+        for (j = i + 1; j < nodes.length; j++) {
+          b = nodes[j];
+          dx = a.x - b.x;
+          dy = a.y - b.y;
+          dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < LINK) {
+            alpha = (1 - dist / LINK) * 0.22;
+            ctx.strokeStyle = 'rgba(143,163,199,' + alpha.toFixed(3) + ')';
+            ctx.beginPath();
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(b.x, b.y);
+            ctx.stroke();
+          }
+        }
+        dx = a.x - pointer.x;
+        dy = a.y - pointer.y;
+        dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < REACH) {
+          alpha = (1 - dist / REACH) * 0.6;
+          ctx.strokeStyle = 'rgba(255,180,59,' + alpha.toFixed(3) + ')';
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(pointer.x, pointer.y);
+          ctx.stroke();
+        }
+      }
+
+      ctx.fillStyle = 'rgba(190,205,235,0.6)';
+      for (i = 0; i < nodes.length; i++) {
+        ctx.beginPath();
+        ctx.arc(nodes[i].x, nodes[i].y, nodes[i].r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function loop() {
+      draw(true);
+      frameId = requestAnimationFrame(loop);
+    }
+
+    function play() {
+      if (reduce || frameId || !visible || document.hidden) return;
+      frameId = requestAnimationFrame(loop);
+    }
+
+    function pause() {
+      cancelAnimationFrame(frameId);
+      frameId = 0;
+    }
+
+    hero.addEventListener('pointermove', function (event) {
+      var rect = hero.getBoundingClientRect();
+      pointer.x = event.clientX - rect.left;
+      pointer.y = event.clientY - rect.top;
+    });
+    hero.addEventListener('pointerleave', function () {
+      pointer.x = -999;
+      pointer.y = -999;
+    });
+
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) pause();
+      else play();
+    });
+
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (entries) {
+        visible = entries[0].isIntersecting;
+        if (visible) play();
+        else pause();
+      }).observe(hero);
+    }
+
+    var resizeTimer = 0;
+    function onResize() {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(resize, 120);
+    }
+    if ('ResizeObserver' in window) new ResizeObserver(onResize).observe(hero);
+    else window.addEventListener('resize', onResize);
+
+    resize();
+    play();
+  })();
+
+  /* ---------- Полоса прокрутки ---------- */
+
+  (function progress() {
+    var bar = document.querySelector('.progress');
+    var waiting = false;
+    function update() {
+      var max = html.scrollHeight - window.innerHeight;
+      var value = max > 0 ? Math.min(window.scrollY / max, 1) : 0;
+      bar.style.transform = 'scaleX(' + value.toFixed(4) + ')';
+      waiting = false;
+    }
+    window.addEventListener('scroll', function () {
+      if (!waiting) {
+        waiting = true;
+        requestAnimationFrame(update);
+      }
+    }, { passive: true });
+    window.addEventListener('resize', update);
+    update();
+  })();
+
+  /* ---------- Линии, которые прорисовываются при появлении ---------- */
+
+  (function rules() {
+    var items = document.querySelectorAll('.ruled');
+    if (reduce || !('IntersectionObserver' in window)) {
+      items.forEach(function (el) { el.classList.add('in'); });
+      return;
+    }
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.4 });
+    items.forEach(function (el) { observer.observe(el); });
+  })();
+
+  /* ---------- Кнопка «Скопировать адрес» ---------- */
+
+  (function copyMail() {
+    var button = document.getElementById('copy');
+    var status = document.getElementById('copy-status');
+    var address = 'teamgrowth37@gmail.com';
+    var timer = 0;
+
+    function say(message) {
+      status.textContent = message;
+      clearTimeout(timer);
+      timer = setTimeout(function () { status.textContent = ''; }, 3000);
+    }
+
+    function fallback() {
+      var field = document.createElement('textarea');
+      field.value = address;
+      field.setAttribute('readonly', '');
+      field.style.position = 'fixed';
+      field.style.opacity = '0';
+      document.body.appendChild(field);
+      field.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(field);
+      say(ok ? 'Адрес скопирован' : 'Не получилось скопировать. Выделите адрес выше вручную.');
+    }
+
+    button.addEventListener('click', function () {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(address).then(function () {
+          say('Адрес скопирован');
+        }, fallback);
+      } else {
+        fallback();
+      }
+    });
+  })();
+
+  startGreeting();
 })();
