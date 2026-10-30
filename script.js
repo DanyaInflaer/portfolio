@@ -320,6 +320,85 @@
     items.forEach(function (el) { observer.observe(el); });
   })();
 
+  /* ---------- Калькулятор вклада ---------- */
+
+  (function depositCalc() {
+    var form = document.getElementById('calc-form');
+    var sumInput = document.getElementById('calc-sum');
+    var monthsInput = document.getElementById('calc-months');
+    var rateInput = document.getElementById('calc-rate');
+    var capInput = document.getElementById('calc-cap');
+    var outMonths = document.getElementById('out-months');
+    var outTotal = document.getElementById('out-total');
+    var outGain = document.getElementById('out-gain');
+    var outError = document.getElementById('out-error');
+    var outLine = document.getElementById('out-line');
+    var money = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 });
+
+    function plural(n, one, few, many) {
+      var a = Math.abs(n) % 100;
+      var b = a % 10;
+      if (a > 10 && a < 20) return many;
+      if (b > 1 && b < 5) return few;
+      if (b === 1) return one;
+      return many;
+    }
+
+    function fmt(value) {
+      return money.format(Math.round(value)).replace(/ /g, ' ') + ' ₽';
+    }
+
+    function balanceAt(sum, rate, month, capitalize) {
+      var r = rate / 100 / 12;
+      return capitalize ? sum * Math.pow(1 + r, month) : sum * (1 + r * month);
+    }
+
+    function showError(message) {
+      outError.textContent = message;
+      outError.hidden = false;
+    }
+
+    function update() {
+      var sum = parseFloat(sumInput.value);
+      var months = parseInt(monthsInput.value, 10);
+      var rate = parseFloat(rateInput.value);
+      var capitalize = capInput.checked;
+
+      if (!(sum > 0) || sum > 1e10) {
+        showError('Введите сумму вклада больше нуля.');
+        return;
+      }
+      if (!(months >= 1) || months > 360) {
+        showError('Введите срок от 1 до 360 месяцев.');
+        return;
+      }
+      if (!(rate >= 0) || rate > 100) {
+        showError('Введите ставку от 0 до 100 процентов годовых.');
+        return;
+      }
+      outError.hidden = true;
+
+      var total = balanceAt(sum, rate, months, capitalize);
+      outMonths.textContent = months + ' ' + plural(months, 'месяц', 'месяца', 'месяцев');
+      outTotal.textContent = fmt(total);
+      outGain.textContent = fmt(total - sum);
+
+      var d = '';
+      var span = total - sum;
+      for (var i = 0; i <= months; i++) {
+        var value = balanceAt(sum, rate, i, capitalize);
+        var x = (i / months) * 400;
+        var y = span > 0 ? 130 - ((value - sum) / span) * 120 : 70;
+        d += (i === 0 ? 'M' : ' L') + x.toFixed(1) + ' ' + y.toFixed(1);
+      }
+      outLine.setAttribute('d', d);
+    }
+
+    form.addEventListener('input', update);
+    form.addEventListener('submit', function (event) { event.preventDefault(); });
+    update();
+  })();
+
   /* ---------- Кнопка «Скопировать адрес» ---------- */
 
   (function copyMail() {

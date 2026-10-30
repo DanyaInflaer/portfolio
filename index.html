@@ -32,6 +32,7 @@
       <nav aria-label="Разделы сайта">
         <a href="#work">Чем занимаюсь</a>
         <a href="#projects">Проект</a>
+        <a href="#calc">Калькулятор</a>
         <a href="#path">Как учусь</a>
         <a href="#contact">Контакты</a>
       </nav>
@@ -60,7 +61,7 @@
         <p class="hero-sub">Я Даня. Учусь делать сайты, которые помогают людям разобраться в сложном: от цифр про экономику до безопасности в интернете.</p>
         <div class="hero-actions">
           <a class="btn btn-amber" href="#projects">Смотреть проект</a>
-          <a class="btn btn-line" href="mailto:teamgrowth37@gmail.com">Написать мне</a>
+          <a class="btn btn-line" href="#contact">Написать мне</a>
         </div>
       </div>
     </section>
@@ -105,7 +106,57 @@
             </ul>
           </div>
         </article>
+
+        <figure class="shot">
+          <a href="https://danyainflaer.github.io/invest-with-dan/" target="_blank" rel="noopener" aria-label="Открыть сайт Growth Syndicate в новой вкладке">
+            <img src="assets/growth-syndicate.jpg" width="1280" height="724" loading="lazy"
+                 alt="Главная страница сайта Growth Syndicate: приветствие команды и карточка с ключевой ставкой, инфляцией, безработицей, курсом доллара и индексом Мосбиржи">
+          </a>
+        </figure>
+
         <p class="next">Здесь появятся следующие проекты.</p>
+      </div>
+    </section>
+
+    <section class="section section--tint" id="calc" aria-labelledby="calc-title">
+      <div class="wrap">
+        <h2 id="calc-title">Посчитайте вклад</h2>
+        <p class="calc-intro">Быстрая прикидка по вашим цифрам. Это упрощённая версия калькуляторов с моего сайта про экономику.</p>
+
+        <div class="calc">
+          <form class="calc-form" id="calc-form" novalidate>
+            <div class="field">
+              <label for="calc-sum">Сумма вклада, ₽</label>
+              <input id="calc-sum" name="sum" type="number" inputmode="decimal" min="0" step="1000" value="500000">
+            </div>
+            <div class="field">
+              <label for="calc-months">Срок, месяцев</label>
+              <input id="calc-months" name="months" type="number" inputmode="numeric" min="1" max="360" step="1" value="12">
+            </div>
+            <div class="field">
+              <label for="calc-rate">Ставка, % годовых</label>
+              <input id="calc-rate" name="rate" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="14">
+            </div>
+            <label class="check">
+              <input id="calc-cap" type="checkbox" checked>
+              <span>Проценты прибавляются к вкладу каждый месяц</span>
+            </label>
+            <p class="calc-note">Ставку берите из своего банка. Расчёт примерный и не учитывает налог на доход по вкладам.</p>
+          </form>
+
+          <div class="calc-result" aria-live="polite" aria-atomic="true">
+            <p class="result-label">Через <span id="out-months">12 месяцев</span> на счёте будет</p>
+            <p class="result-total" id="out-total">574 671 ₽</p>
+            <p class="result-gain">Доход по процентам: <strong id="out-gain">74 671 ₽</strong></p>
+            <p class="result-error" id="out-error" hidden></p>
+            <svg class="result-chart" viewBox="0 0 400 140" preserveAspectRatio="none" aria-hidden="true">
+              <line x1="0" y1="35" x2="400" y2="35"/>
+              <line x1="0" y1="70" x2="400" y2="70"/>
+              <line x1="0" y1="105" x2="400" y2="105"/>
+              <path id="out-line" d="M0 130 L400 10"/>
+            </svg>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -137,12 +188,13 @@
     <section class="section section--dark" id="contact" aria-labelledby="contact-title">
       <div class="wrap">
         <h2 id="contact-title">Напишите мне</h2>
-        <p class="contact-text">Расскажите про идею, сайт или задачу, которую хотите решить.</p>
+        <p class="contact-text">Расскажите про идею, сайт или задачу, которую хотите решить. Отвечу в Telegram или на почту.</p>
         <a class="mail" href="mailto:teamgrowth37@gmail.com">teamgrowth37@gmail.com</a>
-        <div>
+        <div class="contact-actions">
+          <a class="btn btn-amber" href="https://t.me/idanichk" target="_blank" rel="noopener">Написать в Telegram</a>
           <button class="btn btn-line" id="copy" type="button">Скопировать адрес</button>
-          <p class="copy-status" id="copy-status" role="status" aria-live="polite"></p>
         </div>
+        <p class="copy-status" id="copy-status" role="status" aria-live="polite"></p>
       </div>
     </section>
   </main>
