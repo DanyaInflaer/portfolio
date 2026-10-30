@@ -1,17 +1,70 @@
+/* Цвета и размеры, которые не зависят от темы */
 :root {
-  --ink: #0A0F1C;
-  --ink-2: #111A2F;
-  --paper: #ECEEF2;
-  --on-dark: #E8ECF6;
-  --muted-dark: #A3AEC6;
-  --muted-paper: #4A5468;
   --amber: #FFB43B;
   --cobalt: #1F44C9;
-  --focus: var(--amber);
-  --rule: rgba(255, 255, 255, 0.35);
-  --rule-soft: rgba(255, 255, 255, 0.2);
+  --ink: #0A0F1C;
   --display: "Geologica", "Arial Black", system-ui, sans-serif;
   --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+}
+
+/*
+  Две палитры: тёмная и светлая. Каждый раздел берёт одну из них.
+  Тема «Контраст» чередует их, «Тёмная» и «Светлая» дают одну на всю страницу.
+*/
+:root,
+.top,
+.hero,
+.section--dark,
+.foot,
+html[data-theme="dark"] .section--paper,
+html[data-theme="dark"] .section--tint {
+  --bg-a: #0A0F1C;
+  --bg-b: #111A2F;
+  --fg: #E8ECF6;
+  --strong: #FFFFFF;
+  --muted: #A3AEC6;
+  --rule: rgba(255, 255, 255, 0.4);
+  --rule-soft: rgba(255, 255, 255, 0.2);
+  --accent: #FFB43B;
+  --btn-bg: #FFB43B;
+  --btn-fg: #0A0F1C;
+  --btn-hover-bg: #FFFFFF;
+  --btn-hover-fg: #0A0F1C;
+  --line-border: rgba(255, 255, 255, 0.4);
+  --field-bg: #0A0F1C;
+  --field-border: rgba(255, 255, 255, 0.3);
+  --grid: rgba(255, 255, 255, 0.07);
+  --net-line: 143, 163, 199;
+  --net-node: 190, 205, 235;
+  --net-accent: 255, 180, 59;
+}
+
+html[data-theme="light"],
+html[data-theme="light"] .top,
+html[data-theme="light"] .hero,
+html[data-theme="light"] .section--dark,
+html[data-theme="light"] .foot,
+.section--paper,
+.section--tint {
+  --bg-a: #ECEEF2;
+  --bg-b: #E0E4EB;
+  --fg: #0A0F1C;
+  --strong: #0A0F1C;
+  --muted: #4A5468;
+  --rule: #0A0F1C;
+  --rule-soft: rgba(10, 15, 28, 0.2);
+  --accent: #1F44C9;
+  --btn-bg: #1F44C9;
+  --btn-fg: #FFFFFF;
+  --btn-hover-bg: #0A0F1C;
+  --btn-hover-fg: #FFFFFF;
+  --line-border: rgba(10, 15, 28, 0.4);
+  --field-bg: #FFFFFF;
+  --field-border: rgba(10, 15, 28, 0.35);
+  --grid: rgba(10, 15, 28, 0.08);
+  --net-line: 60, 75, 110;
+  --net-node: 60, 75, 110;
+  --net-accent: 31, 68, 201;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -20,8 +73,8 @@ html { scroll-behavior: smooth; }
 
 body {
   margin: 0;
-  background: var(--ink);
-  color: var(--on-dark);
+  background: var(--bg-a);
+  color: var(--fg);
   font: 400 1.125rem/1.7 var(--serif);
   -webkit-font-smoothing: antialiased;
 }
@@ -29,7 +82,7 @@ body {
 a { color: inherit; }
 
 :focus-visible {
-  outline: 3px solid var(--focus);
+  outline: 3px solid var(--accent);
   outline-offset: 3px;
   border-radius: 2px;
 }
@@ -74,6 +127,7 @@ a { color: inherit; }
   left: 0;
   right: 0;
   z-index: 5;
+  color: var(--fg);
 }
 
 .top-row {
@@ -87,17 +141,38 @@ a { color: inherit; }
 .mark {
   display: inline-flex;
   margin-right: auto;
-  color: #fff;
+  color: var(--strong);
 }
+.mark polyline { stroke: var(--accent); }
 
 .top nav { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; }
 
 .top nav a {
-  color: var(--muted-dark);
+  color: var(--muted);
   font: 500 0.95rem var(--display);
   text-decoration: none;
 }
-.top nav a:hover { color: #fff; }
+.top nav a:hover { color: var(--strong); }
+
+/* Переключатель тем */
+.themes {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--rule-soft);
+  border-radius: 6px;
+}
+
+.themes button {
+  padding: 0.45rem 0.8rem;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: 500 0.85rem/1.2 var(--display);
+  cursor: pointer;
+}
+.themes button:hover { color: var(--strong); }
+.themes button[aria-pressed="true"] { background: var(--accent); color: var(--btn-fg); }
+.themes button:focus-visible { outline-offset: -3px; }
 
 /* Главный экран */
 .hero {
@@ -110,7 +185,8 @@ a { color: inherit; }
   min-height: 100svh;
   overflow: hidden;
   isolation: isolate;
-  background: var(--ink);
+  background: var(--bg-a);
+  color: var(--fg);
 }
 
 .hero canvas {
@@ -129,14 +205,14 @@ a { color: inherit; }
 
 .greeting {
   margin: 0 0 1.75rem;
-  color: #fff;
+  color: var(--strong);
   font: 700 clamp(2.75rem, 10.5vw, 8.5rem)/1 var(--display);
   letter-spacing: -0.035em;
 }
 
 .word { display: inline-block; white-space: nowrap; }
 .ch { display: inline-block; text-align: center; }
-.ch:not(.lock) { color: var(--amber); }
+.ch:not(.lock) { color: var(--accent); }
 
 .hero-sub {
   max-width: 34rem;
@@ -174,14 +250,14 @@ a { color: inherit; }
 .chart-clip svg { display: block; width: 100%; height: 100%; }
 
 .chart-grid line {
-  stroke: rgba(255, 255, 255, 0.07);
+  stroke: var(--grid);
   stroke-width: 1;
   vector-effect: non-scaling-stroke;
 }
 
 .chart-line {
   fill: none;
-  stroke: var(--amber);
+  stroke: var(--accent);
   stroke-width: 2.5;
   stroke-linejoin: round;
   stroke-linecap: round;
@@ -200,13 +276,13 @@ a { color: inherit; }
   height: 10px;
   margin: -5px 0 0 -5px;
   border-radius: 50%;
-  background: var(--amber);
+  background: var(--accent);
 }
 .dot::after {
   content: "";
   position: absolute;
   inset: 0;
-  border: 2px solid var(--amber);
+  border: 2px solid var(--accent);
   border-radius: 50%;
   animation: ring 2.2s ease-out infinite;
 }
@@ -226,32 +302,32 @@ a { color: inherit; }
   text-decoration: none;
   cursor: pointer;
 }
-.btn-amber { background: var(--amber); color: var(--ink); }
-.btn-amber:hover { background: #fff; }
-.btn-line { border-color: rgba(255, 255, 255, 0.4); color: #fff; }
-.btn-line:hover { border-color: var(--amber); color: var(--amber); }
+.btn-primary { background: var(--btn-bg); color: var(--btn-fg); }
+.btn-primary:hover { background: var(--btn-hover-bg); color: var(--btn-hover-fg); }
+.btn-line { border-color: var(--line-border); color: var(--strong); }
+.btn-line:hover { border-color: var(--accent); color: var(--accent); }
 
 /* Разделы */
-.section { padding-block: clamp(4rem, 9vw, 7rem); }
-
-.section--paper {
-  --focus: var(--cobalt);
-  --rule: var(--ink);
-  --rule-soft: rgba(10, 15, 28, 0.2);
-  background: var(--paper);
-  color: var(--ink);
+.section {
+  padding-block: clamp(4rem, 9vw, 7rem);
+  background: var(--bg-a);
+  color: var(--fg);
 }
+.section--dark,
+.section--tint { background: var(--bg-b); }
+#contact.section--dark { background: var(--bg-a); }
 
-.section--dark { background: var(--ink-2); }
-#contact.section--dark { background: var(--ink); }
+/* В одноцветных темах разделы отделяет тонкая линия */
+html[data-theme="dark"] .section,
+html[data-theme="light"] .section { border-top: 1px solid var(--rule-soft); }
 
 .section h2 {
   max-width: 20ch;
   margin: 0 0 2.5rem;
+  color: var(--strong);
   font: 700 clamp(2rem, 5vw, 3.25rem)/1.05 var(--display);
   letter-spacing: -0.025em;
 }
-.section--dark h2 { color: #fff; }
 
 /* Линия, которая прорисовывается при появлении блока */
 .ruled { position: relative; }
@@ -282,6 +358,7 @@ a { color: inherit; }
 .row h3,
 .step h3 {
   margin: 0;
+  color: var(--strong);
   font: 700 clamp(1.35rem, 2.4vw, 1.75rem)/1.2 var(--display);
   letter-spacing: -0.015em;
 }
@@ -290,7 +367,7 @@ a { color: inherit; }
 .step p {
   max-width: 46ch;
   margin: 0;
-  color: var(--muted-paper);
+  color: var(--muted);
 }
 
 /* Проект */
@@ -302,7 +379,7 @@ a { color: inherit; }
 
 .project h3 {
   margin: 0 0 1.25rem;
-  color: #fff;
+  color: var(--strong);
   font: 700 clamp(1.6rem, 3.4vw, 2.4rem)/1.1 var(--display);
   letter-spacing: -0.02em;
 }
@@ -310,89 +387,32 @@ a { color: inherit; }
 .project p {
   max-width: 52ch;
   margin: 0 0 2rem;
-  color: var(--muted-dark);
+  color: var(--muted);
 }
 
 .project h4 {
   margin: 0 0 1rem;
-  color: #fff;
+  color: var(--strong);
   font: 600 1.1rem/1.3 var(--display);
 }
 
 .inside { margin: 0; padding: 0; list-style: none; border-bottom: 1px solid var(--rule-soft); }
-.inside li { padding-block: 0.95rem; font: 500 1rem/1.4 var(--display); color: var(--on-dark); }
+.inside li { padding-block: 0.95rem; color: var(--fg); font: 500 1rem/1.4 var(--display); }
 
-.next { margin: 3rem 0 0; color: var(--muted-dark); }
-
-/* Как я учусь */
-.path-intro { max-width: 40ch; margin: -1rem 0 2.5rem; font-size: 1.25rem; }
-
-.steps { margin: 0 0 4rem; padding: 0; list-style: none; border-bottom: 1px solid var(--rule-soft); }
-
-.step {
-  display: grid;
-  grid-template-columns: 3.5rem minmax(0, 18rem) minmax(0, 1fr);
-  gap: 0.5rem 2rem;
-  align-items: baseline;
-  padding-block: 1.5rem 1.75rem;
-}
-
-.num {
-  color: var(--cobalt);
-  font: 700 clamp(1.6rem, 3vw, 2.2rem)/1 var(--display);
-}
-
-.goal {
-  max-width: 26ch;
-  margin: 0;
-  font: 600 clamp(1.6rem, 3.8vw, 2.6rem)/1.18 var(--display);
-  letter-spacing: -0.02em;
-}
-
-/* Контакты */
-.contact-text { max-width: 36ch; margin: -1rem 0 2rem; color: var(--muted-dark); font-size: 1.25rem; }
-
-.mail {
-  display: inline-block;
-  margin: 0 0 1.75rem;
-  border-bottom: 3px solid var(--amber);
-  color: #fff;
-  font: 700 clamp(1.3rem, 5.6vw, 3.25rem)/1.1 var(--display);
-  overflow-wrap: anywhere;
-  text-decoration: none;
-}
-.mail:hover { color: var(--amber); }
-
-.copy-status { min-height: 1.7em; margin: 0.75rem 0 0; color: var(--muted-dark); font-size: 1rem; }
-
-.foot {
-  padding-block: 2rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
-  background: var(--ink);
-  color: var(--muted-dark);
-  font-size: 0.95rem;
-}
+.next { margin: 3rem 0 0; color: var(--muted); }
 
 /* Скриншот проекта */
 .shot { margin: 3rem 0 0; }
 .shot a {
   display: block;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid var(--rule-soft);
   border-radius: 6px;
 }
-.shot a:hover { border-color: var(--amber); }
+.shot a:hover { border-color: var(--accent); }
 .shot img { display: block; width: 100%; height: auto; }
 
 /* Калькулятор вклада */
-.section--tint {
-  --focus: var(--cobalt);
-  --rule: var(--ink);
-  --rule-soft: rgba(10, 15, 28, 0.2);
-  background: #E0E4EB;
-  color: var(--ink);
-}
-
 .calc-intro { max-width: 44ch; margin: -1rem 0 2.5rem; font-size: 1.25rem; }
 
 .calc {
@@ -404,35 +424,37 @@ a { color: inherit; }
 
 .calc-form { display: grid; gap: 1.25rem; }
 
-.field label { display: block; margin-bottom: 0.4rem; font: 600 1rem/1.3 var(--display); }
+.field label { display: block; margin-bottom: 0.4rem; color: var(--strong); font: 600 1rem/1.3 var(--display); }
 
 .field input {
   width: 100%;
   padding: 0.8rem 1rem;
-  border: 1px solid rgba(10, 15, 28, 0.35);
+  border: 1px solid var(--field-border);
   border-radius: 4px;
-  background: #fff;
-  color: var(--ink);
+  background: var(--field-bg);
+  color: var(--strong);
   font: 500 1.25rem/1.2 var(--display);
 }
 
 .check { display: flex; align-items: flex-start; gap: 0.75rem; cursor: pointer; font-size: 1.05rem; line-height: 1.5; }
-.check input { flex: none; width: 1.25rem; height: 1.25rem; margin: 0.2rem 0 0; accent-color: var(--cobalt); }
+.check input { flex: none; width: 1.25rem; height: 1.25rem; margin: 0.2rem 0 0; accent-color: var(--accent); }
 
-.calc-note { margin: 0; color: var(--muted-paper); font-size: 0.95rem; }
+.calc-note { margin: 0; color: var(--muted); font-size: 0.95rem; }
 
+/* Панель с результатом всегда тёмная, чтобы цифры были заметны в любой теме */
 .calc-result {
   padding: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 4px;
-  background: var(--ink);
-  color: var(--on-dark);
+  background: #0A0F1C;
+  color: #E8ECF6;
 }
 
-.result-label { margin: 0 0 0.5rem; color: var(--muted-dark); }
+.result-label { margin: 0 0 0.5rem; color: #A3AEC6; }
 
 .result-total {
   margin: 0;
-  color: #fff;
+  color: #FFFFFF;
   font: 700 clamp(2rem, 6vw, 3.5rem)/1.05 var(--display);
   letter-spacing: -0.02em;
   overflow-wrap: anywhere;
@@ -453,7 +475,57 @@ a { color: inherit; }
   vector-effect: non-scaling-stroke;
 }
 
+/* Как я учусь */
+.path-intro { max-width: 40ch; margin: -1rem 0 2.5rem; font-size: 1.25rem; }
+
+.steps { margin: 0 0 4rem; padding: 0; list-style: none; border-bottom: 1px solid var(--rule-soft); }
+
+.step {
+  display: grid;
+  grid-template-columns: 3.5rem minmax(0, 18rem) minmax(0, 1fr);
+  gap: 0.5rem 2rem;
+  align-items: baseline;
+  padding-block: 1.5rem 1.75rem;
+}
+
+.num {
+  color: var(--accent);
+  font: 700 clamp(1.6rem, 3vw, 2.2rem)/1 var(--display);
+}
+
+.goal {
+  max-width: 26ch;
+  margin: 0;
+  color: var(--strong);
+  font: 600 clamp(1.6rem, 3.8vw, 2.6rem)/1.18 var(--display);
+  letter-spacing: -0.02em;
+}
+
+/* Контакты */
+.contact-text { max-width: 36ch; margin: -1rem 0 2rem; color: var(--muted); font-size: 1.25rem; }
+
+.mail {
+  display: inline-block;
+  margin: 0 0 1.75rem;
+  border-bottom: 3px solid var(--accent);
+  color: var(--strong);
+  font: 700 clamp(1.3rem, 5.6vw, 3.25rem)/1.1 var(--display);
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+.mail:hover { color: var(--accent); }
+
 .contact-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+
+.copy-status { min-height: 1.7em; margin: 0.75rem 0 0; color: var(--muted); font-size: 1rem; }
+
+.foot {
+  padding-block: 2rem;
+  border-top: 1px solid var(--rule-soft);
+  background: var(--bg-a);
+  color: var(--muted);
+  font-size: 0.95rem;
+}
 
 /* Если скрипт не сработал, страница всё равно должна открыться */
 .js.show-all .greeting { visibility: visible; }
@@ -471,6 +543,7 @@ a { color: inherit; }
   .step { grid-template-columns: 2.75rem 1fr; gap: 0.35rem 1rem; }
   .step p { grid-column: 2; }
   .hero-inner { padding-top: 8rem; }
+  .top nav { order: 3; width: 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -9,6 +9,15 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230A0F1C'/%3E%3Cpolyline points='6,23 13,15 18,19 26,8' fill='none' stroke='%23FFB43B' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
   <script>
     document.documentElement.classList.add('js');
+    // Тема выбирается до первой отрисовки, чтобы страница не мигала.
+    (function () {
+      var theme = 'contrast';
+      try {
+        var saved = localStorage.getItem('theme');
+        if (saved === 'dark' || saved === 'light' || saved === 'contrast') theme = saved;
+      } catch (e) {}
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
     // Если скрипт не отработал, через 4 секунды всё равно показываем страницу.
     setTimeout(function () { document.documentElement.classList.add('show-all'); }, 4000);
   </script>
@@ -36,6 +45,11 @@
         <a href="#path">Как учусь</a>
         <a href="#contact">Контакты</a>
       </nav>
+      <div class="themes" role="group" aria-label="Тема оформления">
+        <button type="button" data-theme-set="contrast" aria-pressed="true">Контраст</button>
+        <button type="button" data-theme-set="dark" aria-pressed="false">Тёмная</button>
+        <button type="button" data-theme-set="light" aria-pressed="false">Светлая</button>
+      </div>
     </div>
   </header>
 
@@ -60,7 +74,7 @@
         <h1 class="greeting" id="greeting">Здравствуйте</h1>
         <p class="hero-sub">Я Даня. Учусь делать сайты, которые помогают людям разобраться в сложном: от цифр про экономику до безопасности в интернете.</p>
         <div class="hero-actions">
-          <a class="btn btn-amber" href="#projects">Смотреть проект</a>
+          <a class="btn btn-primary" href="#projects">Смотреть проект</a>
           <a class="btn btn-line" href="#contact">Написать мне</a>
         </div>
       </div>
@@ -93,7 +107,7 @@
           <div>
             <h3>Growth Syndicate: инвестиции и уровень жизни в России</h3>
             <p>Сайт, где свежие экономические данные собраны в одном месте: ключевая ставка, инфляция, курсы валют, графики за год и сравнение регионов. Рядом калькуляторы вклада, ипотеки, кредита, налогов и пенсии, а также разборы решений Центробанка простыми словами.</p>
-            <a class="btn btn-amber" href="https://danyainflaer.github.io/invest-with-dan/" target="_blank" rel="noopener">Открыть сайт</a>
+            <a class="btn btn-primary" href="https://danyainflaer.github.io/invest-with-dan/" target="_blank" rel="noopener">Открыть сайт</a>
           </div>
           <div>
             <h4>Что внутри сайта</h4>
@@ -191,7 +205,7 @@
         <p class="contact-text">Расскажите про идею, сайт или задачу, которую хотите решить. Отвечу в Telegram или на почту.</p>
         <a class="mail" href="mailto:teamgrowth37@gmail.com">teamgrowth37@gmail.com</a>
         <div class="contact-actions">
-          <a class="btn btn-amber" href="https://t.me/idanichk" target="_blank" rel="noopener">Написать в Telegram</a>
+          <a class="btn btn-primary" href="https://t.me/idanichk" target="_blank" rel="noopener">Написать в Telegram</a>
           <button class="btn btn-line" id="copy" type="button">Скопировать адрес</button>
         </div>
         <p class="copy-status" id="copy-status" role="status" aria-live="polite"></p>

@@ -4,6 +4,35 @@
   var html = document.documentElement;
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  /* ---------- Смена темы ---------- */
+
+  (function themes() {
+    var barColor = { contrast: '#0A0F1C', dark: '#0A0F1C', light: '#ECEEF2' };
+    var buttons = document.querySelectorAll('[data-theme-set]');
+    var meta = document.querySelector('meta[name="theme-color"]');
+
+    function apply(name, save) {
+      if (!barColor[name]) name = 'contrast';
+      html.setAttribute('data-theme', name);
+      buttons.forEach(function (button) {
+        button.setAttribute('aria-pressed', String(button.getAttribute('data-theme-set') === name));
+      });
+      if (meta) meta.setAttribute('content', barColor[name]);
+      if (save) {
+        try { localStorage.setItem('theme', name); } catch (e) {}
+      }
+      document.dispatchEvent(new CustomEvent('themechange'));
+    }
+
+    buttons.forEach(function (button) {
+      button.addEventListener('click', function () {
+        apply(button.getAttribute('data-theme-set'), true);
+      });
+    });
+
+    apply(html.getAttribute('data-theme') || 'contrast', false);
+  })();
+
   /* ---------- Приветствие по времени суток ---------- */
 
   function greetingFor(date) {
@@ -143,6 +172,15 @@
     var frameId = 0;
     var LINK = 140;
     var REACH = 190;
+    var colors = { line: '143,163,199', node: '190,205,235', accent: '255,180,59' };
+
+    // Цвета сети берём из текущей темы.
+    function readColors() {
+      var style = getComputedStyle(hero);
+      colors.line = style.getPropertyValue('--net-line').replace(/\s/g, '') || colors.line;
+      colors.node = style.getPropertyValue('--net-node').replace(/\s/g, '') || colors.node;
+      colors.accent = style.getPropertyValue('--net-accent').replace(/\s/g, '') || colors.accent;
+    }
 
     function resize() {
       var dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -202,7 +240,7 @@
           dist = Math.sqrt(dx * dx + dy * dy);
           if (dist < LINK) {
             alpha = (1 - dist / LINK) * 0.22;
-            ctx.strokeStyle = 'rgba(143,163,199,' + alpha.toFixed(3) + ')';
+            ctx.strokeStyle = 'rgba(' + colors.line + ',' + alpha.toFixed(3) + ')';
             ctx.beginPath();
             ctx.moveTo(a.x, a.y);
             ctx.lineTo(b.x, b.y);
@@ -214,7 +252,7 @@
         dist = Math.sqrt(dx * dx + dy * dy);
         if (dist < REACH) {
           alpha = (1 - dist / REACH) * 0.6;
-          ctx.strokeStyle = 'rgba(255,180,59,' + alpha.toFixed(3) + ')';
+          ctx.strokeStyle = 'rgba(' + colors.accent + ',' + alpha.toFixed(3) + ')';
           ctx.beginPath();
           ctx.moveTo(a.x, a.y);
           ctx.lineTo(pointer.x, pointer.y);
@@ -222,7 +260,7 @@
         }
       }
 
-      ctx.fillStyle = 'rgba(190,205,235,0.6)';
+      ctx.fillStyle = 'rgba(' + colors.node + ',0.6)';
       for (i = 0; i < nodes.length; i++) {
         ctx.beginPath();
         ctx.arc(nodes[i].x, nodes[i].y, nodes[i].r, 0, Math.PI * 2);
@@ -276,6 +314,12 @@
     if ('ResizeObserver' in window) new ResizeObserver(onResize).observe(hero);
     else window.addEventListener('resize', onResize);
 
+    document.addEventListener('themechange', function () {
+      readColors();
+      if (!frameId) draw(false);
+    });
+
+    readColors();
     resize();
     play();
   })();
