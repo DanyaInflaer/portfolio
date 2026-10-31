@@ -475,6 +475,52 @@ html[data-theme="light"] .section { border-top: 1px solid var(--rule-soft); }
   vector-effect: non-scaling-stroke;
 }
 
+/* Заметки о киберсфере */
+.notes-intro { max-width: 44ch; margin: -1rem 0 2.5rem; font-size: 1.25rem; }
+
+.notes { border-bottom: 1px solid var(--rule-soft); }
+
+.note { --rule-h: 2px; }
+
+.note summary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding-block: 1.5rem;
+  list-style: none;
+  cursor: pointer;
+}
+.note summary::-webkit-details-marker { display: none; }
+
+.note summary::after {
+  content: "+";
+  flex: none;
+  color: var(--accent);
+  font: 500 2rem/1 var(--display);
+  transition: transform 0.25s ease;
+}
+.note[open] summary::after { transform: rotate(45deg); }
+
+.note-head { display: block; }
+
+.note-title {
+  margin: 0 0 0.35rem;
+  color: var(--strong);
+  font: 700 clamp(1.25rem, 2.4vw, 1.6rem)/1.2 var(--display);
+  letter-spacing: -0.015em;
+}
+.note summary:hover .note-title { color: var(--accent); }
+
+.note-teaser { display: block; max-width: 52ch; color: var(--muted); }
+
+.note-body { max-width: 60ch; padding-bottom: 2rem; }
+.note-body p { margin: 0 0 1rem; }
+.note-body p:last-child { margin-bottom: 0; }
+.note-body ul { margin: 0 0 1rem; padding-left: 1.25rem; }
+.note-body li { margin-bottom: 0.4rem; }
+.note-body strong { color: var(--strong); font-weight: 600; }
+
 /* Как я учусь */
 .path-intro { max-width: 40ch; margin: -1rem 0 2.5rem; font-size: 1.25rem; }
 
@@ -549,6 +595,7 @@ html[data-theme="light"] .section { border-top: 1px solid var(--rule-soft); }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .dot::after { animation: none; display: none; }
+  .note summary::after { transition: none; }
   .js .hero-sub,
   .js .hero-actions,
   .js .chart-clip,

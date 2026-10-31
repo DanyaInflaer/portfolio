@@ -360,7 +360,7 @@
           observer.unobserve(entry.target);
         }
       });
-    }, { threshold: 0.4 });
+    }, { threshold: 0, rootMargin: '0px 0px -12% 0px' });
     items.forEach(function (el) { observer.observe(el); });
   })();
 
