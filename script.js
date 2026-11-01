@@ -194,11 +194,11 @@
     var fontWait = (document.fonts && document.fonts.load)
       ? document.fonts.load('700 100px Geologica', text).catch(function () {})
       : Promise.resolve();
-    var timeout = new Promise(function (resolve) { setTimeout(resolve, 900); });
+    var timeout = new Promise(function (resolve) { setTimeout(resolve, 400); });
     Promise.race([fontWait, timeout]).then(function () {
       decrypt(chars, { first: 260, step: 70, spread: 180 }, enableFlicker);
       heading.classList.add('ready');
-      setTimeout(showRest, 900);
+      setTimeout(showRest, 650);
       setTimeout(function () { html.classList.add('chart-in'); }, 500);
     });
   }
@@ -270,6 +270,8 @@
     var frameId = 0;
     var LINK = 140;
     var REACH = 190;
+    var frameGap = 0;
+    var lastFrame = 0;
     var colors = { line: '143,163,199', node: '190,205,235', accent: '255,180,59' };
 
     // Цвета сети берём из текущей темы.
@@ -281,7 +283,9 @@
     }
 
     function resize() {
-      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      var small = window.innerWidth < 700;
+      var dpr = Math.min(window.devicePixelRatio || 1, small ? 1 : 2);
+      frameGap = small ? 33 : 0;
       var rect = hero.getBoundingClientRect();
       width = rect.width;
       height = rect.height;
@@ -289,7 +293,8 @@
       canvas.height = Math.round(height * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      var total = Math.max(22, Math.min(90, Math.round((width * height) / 16000)));
+      // На телефонах точек меньше: сеть остаётся красивой, а процессор отдыхает.
+      var total = Math.max(22, Math.min(small ? 46 : 90, Math.round((width * height) / 16000)));
       nodes = [];
       for (var i = 0; i < total; i++) {
         nodes.push({
@@ -303,13 +308,18 @@
       draw(false);
     }
 
+    // Линии одинаковой яркости рисуются одним вызовом, а не по одной.
+    var BUCKETS = 5;
+    var buckets = [];
+    for (var b = 0; b < BUCKETS; b++) buckets.push([]);
+
     function draw(move) {
-      var i, j, a, b, dx, dy, dist, alpha;
+      var i, j, a, c, dx, dy, dist, alpha, k, list;
       ctx.clearRect(0, 0, width, height);
 
-      for (i = 0; i < nodes.length; i++) {
-        a = nodes[i];
-        if (move) {
+      if (move) {
+        for (i = 0; i < nodes.length; i++) {
+          a = nodes[i];
           dx = pointer.x - a.x;
           dy = pointer.y - a.y;
           dist = Math.sqrt(dx * dx + dy * dy);
@@ -328,47 +338,71 @@
         }
       }
 
+      for (k = 0; k < BUCKETS; k++) buckets[k].length = 0;
       ctx.lineWidth = 1;
+
       for (i = 0; i < nodes.length; i++) {
         a = nodes[i];
         for (j = i + 1; j < nodes.length; j++) {
-          b = nodes[j];
-          dx = a.x - b.x;
-          dy = a.y - b.y;
+          c = nodes[j];
+          dx = a.x - c.x;
+          dy = a.y - c.y;
+          if (dx > LINK || dx < -LINK || dy > LINK || dy < -LINK) continue;
           dist = Math.sqrt(dx * dx + dy * dy);
           if (dist < LINK) {
-            alpha = (1 - dist / LINK) * 0.22;
-            ctx.strokeStyle = 'rgba(' + colors.line + ',' + alpha.toFixed(3) + ')';
+            k = Math.min(BUCKETS - 1, Math.floor((1 - dist / LINK) * BUCKETS));
+            buckets[k].push(a.x, a.y, c.x, c.y);
+          }
+        }
+      }
+
+      for (k = 0; k < BUCKETS; k++) {
+        list = buckets[k];
+        if (!list.length) continue;
+        alpha = ((k + 0.5) / BUCKETS) * 0.22;
+        ctx.strokeStyle = 'rgba(' + colors.line + ',' + alpha.toFixed(3) + ')';
+        ctx.beginPath();
+        for (j = 0; j < list.length; j += 4) {
+          ctx.moveTo(list[j], list[j + 1]);
+          ctx.lineTo(list[j + 2], list[j + 3]);
+        }
+        ctx.stroke();
+      }
+
+      // Линии от курсора к ближайшим точкам.
+      if (pointer.x > -900) {
+        for (i = 0; i < nodes.length; i++) {
+          a = nodes[i];
+          dx = a.x - pointer.x;
+          dy = a.y - pointer.y;
+          dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < REACH) {
+            alpha = (1 - dist / REACH) * 0.6;
+            ctx.strokeStyle = 'rgba(' + colors.accent + ',' + alpha.toFixed(3) + ')';
             ctx.beginPath();
             ctx.moveTo(a.x, a.y);
-            ctx.lineTo(b.x, b.y);
+            ctx.lineTo(pointer.x, pointer.y);
             ctx.stroke();
           }
         }
-        dx = a.x - pointer.x;
-        dy = a.y - pointer.y;
-        dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < REACH) {
-          alpha = (1 - dist / REACH) * 0.6;
-          ctx.strokeStyle = 'rgba(' + colors.accent + ',' + alpha.toFixed(3) + ')';
-          ctx.beginPath();
-          ctx.moveTo(a.x, a.y);
-          ctx.lineTo(pointer.x, pointer.y);
-          ctx.stroke();
-        }
       }
 
+      // Все точки одним вызовом.
       ctx.fillStyle = 'rgba(' + colors.node + ',0.6)';
+      ctx.beginPath();
       for (i = 0; i < nodes.length; i++) {
-        ctx.beginPath();
+        ctx.moveTo(nodes[i].x + nodes[i].r, nodes[i].y);
         ctx.arc(nodes[i].x, nodes[i].y, nodes[i].r, 0, Math.PI * 2);
-        ctx.fill();
       }
+      ctx.fill();
     }
 
-    function loop() {
-      draw(true);
+    // На телефонах сеть рисуется 30 раз в секунду: на глаз то же самое, а батарея живёт дольше.
+    function loop(now) {
       frameId = requestAnimationFrame(loop);
+      if (frameGap && now - lastFrame < frameGap - 2) return;
+      lastFrame = now;
+      draw(true);
     }
 
     function play() {
@@ -422,43 +456,37 @@
     play();
   })();
 
-  /* ---------- Полоса прокрутки ---------- */
+  /* ---------- Прокрутка: полоса сверху и уплывающий главный экран ---------- */
 
-  (function progress() {
+  (function scrollEffects() {
     var bar = document.querySelector('.progress');
-    var waiting = false;
-    function update() {
-      var max = html.scrollHeight - window.innerHeight;
-      var value = max > 0 ? Math.min(window.scrollY / max, 1) : 0;
-      bar.style.transform = 'scaleX(' + value.toFixed(4) + ')';
-      waiting = false;
-    }
-    window.addEventListener('scroll', function () {
-      if (!waiting) {
-        waiting = true;
-        requestAnimationFrame(update);
-      }
-    }, { passive: true });
-    window.addEventListener('resize', update);
-    update();
-  })();
-
-  /* ---------- Главный экран уплывает при прокрутке ---------- */
-
-  (function heroDrift() {
-    if (reduce) return;
     var hero = document.getElementById('top');
     var inner = hero.querySelector('.hero-inner');
     var chart = hero.querySelector('.chart');
+    var maxScroll = 0;
+    var heroHeight = 1;
+    var lastDrift = -1;
     var waiting = false;
+
+    // Размеры страницы читаем только когда они меняются, а не на каждом кадре прокрутки.
+    function measure() {
+      maxScroll = Math.max(html.scrollHeight - window.innerHeight, 0);
+      heroHeight = hero.offsetHeight || 1;
+      update();
+    }
 
     function update() {
       waiting = false;
-      var h = hero.offsetHeight || 1;
-      var y = Math.min(Math.max(window.scrollY, 0), h);
-      inner.style.transform = 'translate3d(0,' + (y * 0.25).toFixed(1) + 'px,0)';
-      inner.style.opacity = Math.max(0, 1 - (y / h) * 1.25).toFixed(3);
-      chart.style.transform = 'translate3d(0,' + (y * 0.45).toFixed(1) + 'px,0)';
+      var y = window.scrollY;
+      bar.style.transform = 'scaleX(' + (maxScroll > 0 ? Math.min(y / maxScroll, 1) : 0).toFixed(4) + ')';
+
+      if (reduce) return;
+      var d = Math.round(Math.min(Math.max(y, 0), heroHeight));
+      if (d === lastDrift) return;
+      lastDrift = d;
+      inner.style.transform = 'translate3d(0,' + (d * 0.25).toFixed(1) + 'px,0)';
+      inner.style.opacity = Math.max(0, 1 - (d / heroHeight) * 1.25).toFixed(3);
+      chart.style.transform = 'translate3d(0,' + (d * 0.45).toFixed(1) + 'px,0)';
     }
 
     window.addEventListener('scroll', function () {
@@ -467,8 +495,9 @@
         requestAnimationFrame(update);
       }
     }, { passive: true });
-    window.addEventListener('resize', update);
-    update();
+    window.addEventListener('resize', measure);
+    if ('ResizeObserver' in window) new ResizeObserver(measure).observe(document.body);
+    measure();
   })();
 
   /* ---------- Скриншот проекта наклоняется за курсором ---------- */

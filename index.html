@@ -34,7 +34,9 @@
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Geologica:wght@500;700&family=Source+Serif+4:wght@400;600&display=swap" rel="stylesheet">
+  <!-- Шрифты подключаются без блокировки показа страницы: пока они едут, текст виден запасным шрифтом. -->
+  <link href="https://fonts.googleapis.com/css2?family=Geologica:wght@500;700&family=Source+Serif+4:wght@400;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Geologica:wght@500;700&family=Source+Serif+4:wght@400;600&display=swap" rel="stylesheet"></noscript>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -135,8 +137,14 @@
 
         <figure class="shot">
           <a href="https://danyainflaer.github.io/invest-with-dan/" target="_blank" rel="noopener" aria-label="Открыть сайт Growth Syndicate в новой вкладке">
-            <img src="assets/growth-syndicate.jpg" width="1280" height="724" loading="lazy"
+            <picture>
+              <source type="image/avif" sizes="(min-width: 1160px) 1080px, calc(100vw - 2.5rem)"
+                      srcset="assets/growth-syndicate-640.avif 640w, assets/growth-syndicate-960.avif 960w, assets/growth-syndicate-1280.avif 1280w">
+              <source type="image/webp" sizes="(min-width: 1160px) 1080px, calc(100vw - 2.5rem)"
+                      srcset="assets/growth-syndicate-640.webp 640w, assets/growth-syndicate-960.webp 960w, assets/growth-syndicate-1280.webp 1280w">
+              <img src="assets/growth-syndicate.jpg" width="1280" height="724" loading="lazy" decoding="async"
                  alt="Главная страница сайта Growth Syndicate: приветствие команды и карточка с ключевой ставкой, инфляцией, безработицей, курсом доллара и индексом Мосбиржи">
+            </picture>
           </a>
         </figure>
 

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://danyainflaer.github.io/portfolio/sitemap.xml
