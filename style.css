@@ -412,6 +412,24 @@ html[data-theme="light"] .section { border-top: 1px solid var(--rule-soft); }
 .shot a:hover { border-color: var(--accent); }
 .shot img { display: block; width: 100%; height: auto; }
 
+/* Скриншот наклоняется за курсором и ловит блик */
+.shot a {
+  position: relative;
+  transform: perspective(1400px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1), border-color 0.2s;
+}
+.shot a.tilting { transition: transform 0.08s linear, border-color 0.2s; }
+.shot a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255, 255, 255, 0.14), transparent 45%);
+  transition: opacity 0.3s;
+}
+.shot a.tilting::after { opacity: 1; }
+
 /* Калькулятор вклада */
 .calc-intro { max-width: 44ch; margin: -1rem 0 2.5rem; font-size: 1.25rem; }
 
@@ -514,6 +532,16 @@ html[data-theme="light"] .section { border-top: 1px solid var(--rule-soft); }
 
 .note-teaser { display: block; max-width: 52ch; color: var(--muted); }
 
+/* Заметка раскрывается плавно. Там, где браузер это не умеет, она раскроется сразу. */
+:root { interpolate-size: allow-keywords; }
+
+.note::details-content {
+  height: 0;
+  overflow: clip;
+  transition: height 0.35s ease, content-visibility 0.35s allow-discrete;
+}
+.note[open]::details-content { height: auto; }
+
 .note-body { max-width: 60ch; padding-bottom: 2rem; }
 .note-body p { margin: 0 0 1rem; }
 .note-body p:last-child { margin-bottom: 0; }
@@ -573,7 +601,39 @@ html[data-theme="light"] .section { border-top: 1px solid var(--rule-soft); }
   font-size: 0.95rem;
 }
 
+/* Заголовок ждёт своей очереди, пока до него не долистали */
+.dec-wait { visibility: hidden; }
+
+/* Смена темы идёт кругом: старая и новая страницы не смешиваются */
+::view-transition-old(root),
+::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+::view-transition-old(root) { z-index: 1; }
+::view-transition-new(root) { z-index: 2; }
+
+/* Отклик на наведение в списках */
+@media (hover: hover) and (pointer: fine) {
+  .row h3,
+  .step h3 { transition: transform 0.25s ease, color 0.25s ease; }
+  .row:hover h3,
+  .step:hover h3 { transform: translateX(0.5rem); color: var(--accent); }
+  .inside li { transition: padding-left 0.25s ease, color 0.25s ease; }
+  .inside li:hover { padding-left: 0.6rem; color: var(--strong); }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* Если скрипт не сработал, страница всё равно должна открыться */
+.js.show-all .dec-wait { visibility: visible; }
 .js.show-all .greeting { visibility: visible; }
 .js.show-all .hero-sub,
 .js.show-all .hero-actions { opacity: 1; transform: none; }
@@ -596,6 +656,16 @@ html[data-theme="light"] .section { border-top: 1px solid var(--rule-soft); }
   html { scroll-behavior: auto; }
   .dot::after { animation: none; display: none; }
   .note summary::after { transition: none; }
+  .note::details-content { transition: none; }
+  .shot a,
+  .shot a.tilting,
+  .shot a::after { transition: none; transform: none; }
+  .row h3,
+  .step h3,
+  .row:hover h3,
+  .step:hover h3,
+  .inside li { transition: none; transform: none; }
+  .inside li:hover { padding-left: 0; }
   .js .hero-sub,
   .js .hero-actions,
   .js .chart-clip,

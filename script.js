@@ -26,12 +26,105 @@
 
     buttons.forEach(function (button) {
       button.addEventListener('click', function () {
-        apply(button.getAttribute('data-theme-set'), true);
+        var name = button.getAttribute('data-theme-set');
+        if (name === html.getAttribute('data-theme')) return;
+
+        if (reduce || !document.startViewTransition) {
+          apply(name, true);
+          return;
+        }
+
+        // Новая тема расходится кругом от нажатой кнопки.
+        var rect = button.getBoundingClientRect();
+        var x = rect.left + rect.width / 2;
+        var y = rect.top + rect.height / 2;
+        var radius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+        var transition = document.startViewTransition(function () { apply(name, true); });
+        transition.ready.then(function () {
+          html.animate(
+            { clipPath: ['circle(0px at ' + x + 'px ' + y + 'px)', 'circle(' + radius + 'px at ' + x + 'px ' + y + 'px)'] },
+            { duration: 650, easing: 'cubic-bezier(0.65, 0, 0.35, 1)', pseudoElement: '::view-transition-new(root)' }
+          );
+        }, function () {});
       });
     });
 
     apply(html.getAttribute('data-theme') || 'contrast', false);
   })();
+
+  /* ---------- «Расшифровка» букв ---------- */
+
+  var POOL = '01#%&@$<>/{}[]=+*?';
+
+  function randomChar() {
+    return POOL.charAt(Math.floor(Math.random() * POOL.length));
+  }
+
+  // Разбирает текст элемента на буквы, чтобы потом проявлять их по очереди.
+  function splitChars(el, text) {
+    var list = [];
+    el.setAttribute('aria-label', text);
+    el.textContent = '';
+    text.split(' ').forEach(function (word, index, all) {
+      var wrap = document.createElement('span');
+      wrap.className = 'word';
+      wrap.setAttribute('aria-hidden', 'true');
+      word.split('').forEach(function (letter) {
+        var node = document.createElement('span');
+        node.className = 'ch lock';
+        node.textContent = letter;
+        wrap.appendChild(node);
+        list.push({ el: node, final: letter, done: false, busy: false, width: 0 });
+      });
+      el.appendChild(wrap);
+      if (index < all.length - 1) el.appendChild(document.createTextNode(' '));
+    });
+    return list;
+  }
+
+  // Сначала буквы случайные, потом по очереди встают на место.
+  function decrypt(list, opts, onDone) {
+    var lastSwap = 0;
+    var started;
+    var plan;
+
+    // Фиксируем ширину букв, чтобы строка не прыгала, пока символы меняются.
+    list.forEach(function (c) { c.width = c.el.getBoundingClientRect().width; });
+    list.forEach(function (c) {
+      c.done = false;
+      c.el.style.width = c.width + 'px';
+      c.el.classList.remove('lock');
+      c.el.textContent = randomChar();
+    });
+
+    plan = list.map(function (c, i) { return opts.first + i * opts.step + Math.random() * opts.spread; });
+    started = performance.now();
+
+    function tick(now) {
+      var elapsed = now - started;
+      var swap = now - lastSwap > 45;
+      if (swap) lastSwap = now;
+
+      list.forEach(function (c, i) {
+        if (c.done) return;
+        if (elapsed >= plan[i]) {
+          c.done = true;
+          c.el.textContent = c.final;
+          c.el.classList.add('lock');
+        } else if (swap) {
+          c.el.textContent = randomChar();
+        }
+      });
+
+      if (list.every(function (c) { return c.done; })) {
+        list.forEach(function (c) { c.el.style.width = ''; });
+        if (onDone) onDone();
+        return;
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
 
   /* ---------- Приветствие по времени суток ---------- */
 
@@ -45,71 +138,50 @@
 
   var heading = document.getElementById('greeting');
   var text = greetingFor(new Date());
-  var chars = [];
-
-  heading.setAttribute('aria-label', text);
-  heading.textContent = '';
-  text.split(' ').forEach(function (word, index, all) {
-    var wrap = document.createElement('span');
-    wrap.className = 'word';
-    wrap.setAttribute('aria-hidden', 'true');
-    word.split('').forEach(function (letter) {
-      var node = document.createElement('span');
-      node.className = 'ch lock';
-      node.textContent = letter;
-      wrap.appendChild(node);
-      chars.push({ el: node, final: letter, done: false, width: 0 });
-    });
-    heading.appendChild(wrap);
-    if (index < all.length - 1) heading.appendChild(document.createTextNode(' '));
-  });
+  var chars = splitChars(heading, text);
 
   function showRest() {
     html.classList.add('hero-in');
   }
 
-  function scrambleGreeting() {
-    var pool = '01#%&@$<>/{}[]=+*?';
-    var plan;
-    var started;
-    var lastSwap = 0;
+  // Когда приветствие готово, буквы мерцают под курсором.
+  function enableFlicker() {
+    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
 
-    // Фиксируем ширину букв, чтобы строка не прыгала, пока символы меняются.
-    chars.forEach(function (c) { c.width = c.el.getBoundingClientRect().width; });
-    chars.forEach(function (c) {
-      c.el.style.width = c.width + 'px';
-      c.el.classList.remove('lock');
-      c.el.textContent = pool.charAt(Math.floor(Math.random() * pool.length));
-    });
-    heading.classList.add('ready');
-
-    plan = chars.map(function (c, i) { return 260 + i * 70 + Math.random() * 180; });
-    started = performance.now();
-    setTimeout(showRest, 900);
-
-    function tick(now) {
-      var elapsed = now - started;
-      var swap = now - lastSwap > 45;
-      if (swap) lastSwap = now;
-
-      chars.forEach(function (c, i) {
-        if (c.done) return;
-        if (elapsed >= plan[i]) {
-          c.done = true;
-          c.el.textContent = c.final;
-          c.el.classList.add('lock');
-        } else if (swap) {
-          c.el.textContent = pool.charAt(Math.floor(Math.random() * pool.length));
-        }
-      });
-
-      if (chars.every(function (c) { return c.done; })) {
-        chars.forEach(function (c) { c.el.style.width = ''; });
-        return;
-      }
-      requestAnimationFrame(tick);
+    function flicker(c, delay) {
+      // Пауза между повторами, чтобы буква не мерцала бесконечно под неподвижным курсором.
+      if (!c || c.busy || performance.now() < (c.cooldown || 0)) return;
+      c.busy = true;
+      c.cooldown = performance.now() + delay + 1200;
+      setTimeout(function () {
+        var ticks = 0;
+        c.el.style.width = c.el.getBoundingClientRect().width + 'px';
+        c.el.classList.remove('lock');
+        var timer = setInterval(function () {
+          ticks++;
+          if (ticks > 6) {
+            clearInterval(timer);
+            c.el.textContent = c.final;
+            c.el.classList.add('lock');
+            c.el.style.width = '';
+            c.busy = false;
+            return;
+          }
+          c.el.textContent = randomChar();
+        }, 45);
+      }, delay);
     }
-    requestAnimationFrame(tick);
+
+    heading.addEventListener('pointerover', function (event) {
+      var target = event.target.closest ? event.target.closest('.ch') : null;
+      if (!target) return;
+      var index = -1;
+      chars.forEach(function (c, i) { if (c.el === target) index = i; });
+      if (index < 0) return;
+      flicker(chars[index], 0);
+      flicker(chars[index - 1], 60);
+      flicker(chars[index + 1], 60);
+    });
   }
 
   function startGreeting() {
@@ -124,10 +196,36 @@
       : Promise.resolve();
     var timeout = new Promise(function (resolve) { setTimeout(resolve, 900); });
     Promise.race([fontWait, timeout]).then(function () {
-      scrambleGreeting();
+      decrypt(chars, { first: 260, step: 70, spread: 180 }, enableFlicker);
+      heading.classList.add('ready');
+      setTimeout(showRest, 900);
       setTimeout(function () { html.classList.add('chart-in'); }, 500);
     });
   }
+
+  /* ---------- Заголовки разделов проявляются при прокрутке ---------- */
+
+  (function headings() {
+    if (reduce || !('IntersectionObserver' in window)) return;
+    var items = [];
+    document.querySelectorAll('.section h2').forEach(function (el) {
+      items.push({ el: el, list: splitChars(el, el.textContent.trim()) });
+      el.classList.add('dec-wait');
+    });
+
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        observer.unobserve(entry.target);
+        items.forEach(function (item) {
+          if (item.el !== entry.target) return;
+          item.el.classList.remove('dec-wait');
+          decrypt(item.list, { first: 60, step: 38, spread: 90 });
+        });
+      });
+    }, { threshold: 0.6 });
+    items.forEach(function (item) { observer.observe(item.el); });
+  })();
 
   /* ---------- Линия роста ---------- */
 
@@ -345,6 +443,58 @@
     update();
   })();
 
+  /* ---------- Главный экран уплывает при прокрутке ---------- */
+
+  (function heroDrift() {
+    if (reduce) return;
+    var hero = document.getElementById('top');
+    var inner = hero.querySelector('.hero-inner');
+    var chart = hero.querySelector('.chart');
+    var waiting = false;
+
+    function update() {
+      waiting = false;
+      var h = hero.offsetHeight || 1;
+      var y = Math.min(Math.max(window.scrollY, 0), h);
+      inner.style.transform = 'translate3d(0,' + (y * 0.25).toFixed(1) + 'px,0)';
+      inner.style.opacity = Math.max(0, 1 - (y / h) * 1.25).toFixed(3);
+      chart.style.transform = 'translate3d(0,' + (y * 0.45).toFixed(1) + 'px,0)';
+    }
+
+    window.addEventListener('scroll', function () {
+      if (!waiting) {
+        waiting = true;
+        requestAnimationFrame(update);
+      }
+    }, { passive: true });
+    window.addEventListener('resize', update);
+    update();
+  })();
+
+  /* ---------- Скриншот проекта наклоняется за курсором ---------- */
+
+  (function tilt() {
+    var link = document.querySelector('.shot a');
+    if (!link || reduce || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+
+    link.addEventListener('pointermove', function (event) {
+      var rect = link.getBoundingClientRect();
+      var px = (event.clientX - rect.left) / rect.width;
+      var py = (event.clientY - rect.top) / rect.height;
+      link.style.setProperty('--rx', ((0.5 - py) * 6).toFixed(2) + 'deg');
+      link.style.setProperty('--ry', ((px - 0.5) * 8).toFixed(2) + 'deg');
+      link.style.setProperty('--mx', (px * 100).toFixed(1) + '%');
+      link.style.setProperty('--my', (py * 100).toFixed(1) + '%');
+      link.classList.add('tilting');
+    });
+
+    link.addEventListener('pointerleave', function () {
+      link.classList.remove('tilting');
+      link.style.setProperty('--rx', '0deg');
+      link.style.setProperty('--ry', '0deg');
+    });
+  })();
+
   /* ---------- Линии, которые прорисовываются при появлении ---------- */
 
   (function rules() {
@@ -377,6 +527,13 @@
     var outGain = document.getElementById('out-gain');
     var outError = document.getElementById('out-error');
     var outLine = document.getElementById('out-line');
+    var live = document.getElementById('calc-live');
+    var chart = outLine.ownerSVGElement;
+    var shown = { total: 0, gain: 0 };
+    var last = { total: 0, gain: 0 };
+    var frames = {};
+    var touched = false;
+    var announceTimer = 0;
     var money = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 });
 
     function plural(n, one, few, many) {
@@ -392,6 +549,41 @@
       return money.format(Math.round(value)).replace(/ /g, ' ') + ' ₽';
     }
 
+    // Число плавно перетекает от старого значения к новому.
+    function tweenText(key, el, to, duration) {
+      cancelAnimationFrame(frames[key]);
+      if (reduce) {
+        shown[key] = to;
+        el.textContent = fmt(to);
+        return;
+      }
+      var from = shown[key];
+      var start = performance.now();
+      function frame(now) {
+        var t = Math.min((now - start) / duration, 1);
+        var eased = 1 - Math.pow(1 - t, 3);
+        shown[key] = from + (to - from) * eased;
+        el.textContent = fmt(shown[key]);
+        if (t < 1) frames[key] = requestAnimationFrame(frame);
+      }
+      frames[key] = requestAnimationFrame(frame);
+    }
+
+    // Линия графика прорисовывается слева направо.
+    function revealChart(duration) {
+      if (reduce || !chart.animate) return;
+      chart.animate(
+        [{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0 0 0)' }],
+        { duration: duration, easing: 'cubic-bezier(0.65, 0, 0.35, 1)' }
+      );
+    }
+
+    // Итог для программ чтения с экрана объявляем один раз, когда человек закончил вводить.
+    function announce(message, delay) {
+      clearTimeout(announceTimer);
+      announceTimer = setTimeout(function () { live.textContent = message; }, delay);
+    }
+
     function balanceAt(sum, rate, month, capitalize) {
       var r = rate / 100 / 12;
       return capitalize ? sum * Math.pow(1 + r, month) : sum * (1 + r * month);
@@ -400,9 +592,10 @@
     function showError(message) {
       outError.textContent = message;
       outError.hidden = false;
+      announce(message, 600);
     }
 
-    function update() {
+    function update(animate) {
       var sum = parseFloat(sumInput.value);
       var months = parseInt(monthsInput.value, 10);
       var rate = parseFloat(rateInput.value);
@@ -424,8 +617,19 @@
 
       var total = balanceAt(sum, rate, months, capitalize);
       outMonths.textContent = months + ' ' + plural(months, 'месяц', 'месяца', 'месяцев');
-      outTotal.textContent = fmt(total);
-      outGain.textContent = fmt(total - sum);
+      last.total = total;
+      last.gain = total - sum;
+      if (animate) {
+        tweenText('total', outTotal, last.total, 520);
+        tweenText('gain', outGain, last.gain, 520);
+        revealChart(450);
+      } else {
+        shown.total = last.total;
+        shown.gain = last.gain;
+        outTotal.textContent = fmt(last.total);
+        outGain.textContent = fmt(last.gain);
+      }
+      announce('Через ' + outMonths.textContent + ' на счёте будет ' + fmt(total) + '. Доход по процентам: ' + fmt(total - sum) + '.', 700);
 
       var d = '';
       var span = total - sum;
@@ -438,9 +642,29 @@
       outLine.setAttribute('d', d);
     }
 
-    form.addEventListener('input', update);
+    form.addEventListener('input', function () {
+      touched = true;
+      update(true);
+    });
     form.addEventListener('submit', function (event) { event.preventDefault(); });
-    update();
+    update(false);
+
+    // Когда калькулятор появляется на экране, числа набегают с нуля.
+    if (!reduce && 'IntersectionObserver' in window) {
+      var intro = new IntersectionObserver(function (entries) {
+        if (!entries[0].isIntersecting) return;
+        intro.disconnect();
+        if (touched || outError.hidden === false) return;
+        shown.total = 0;
+        shown.gain = 0;
+        outTotal.textContent = fmt(0);
+        outGain.textContent = fmt(0);
+        tweenText('total', outTotal, last.total, 1100);
+        tweenText('gain', outGain, last.gain, 1100);
+        revealChart(1000);
+      }, { threshold: 0.6 });
+      intro.observe(document.querySelector('.calc-result'));
+    }
   })();
 
   /* ---------- Кнопка «Скопировать адрес» ---------- */
